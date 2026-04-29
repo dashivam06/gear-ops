@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Graph" Version="5.104.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+    <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\gearOps.Application\gearOps.Application.csproj" />
+    <ProjectReference Include="..\gearOps.Domain\gearOps.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
