@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace gearOps.Domain.Entities;
 
 public class Vehicle
@@ -12,6 +9,7 @@ public class Vehicle
     public string Model { get; set; } = null!;
     public int Year { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? ImageUrl { get; set; }
 
     public User Customer { get; set; } = null!;
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
