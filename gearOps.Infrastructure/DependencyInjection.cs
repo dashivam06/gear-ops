@@ -43,6 +43,7 @@ public static class DependencyInjection
         
         // Repositories
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IVehicleRepository, VehicleRepository>();
         
         // Services
         services.AddScoped<IRedisService, RedisService>();
