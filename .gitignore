@@ -598,3 +598,7 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/aspnetcore,visualstudiocode,visualstudio,visualbasic.env
 appsettings.Development.json
+
+# Custom Exclusions
+Study materials/
+frontend/
