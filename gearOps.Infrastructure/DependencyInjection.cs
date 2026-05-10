@@ -1,8 +1,10 @@
 using System;
 using gearOps.Application.Interfaces;
+using gearOps.Domain.Entities;
 using gearOps.Infrastructure.Data;
 using gearOps.Infrastructure.Repositories;
 using gearOps.Infrastructure.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +24,18 @@ public static class DependencyInjection
                               $"Username={config["DB_USERNAME"] ?? "corerouter"};" +
                               $"Password={config["DB_PASSWORD"] ?? "Islington@63"}")
                    .UseSnakeCaseNamingConvention());
+
+        // Identity
+        services.AddIdentity<User, IdentityRole<int>>(options =>
+        {
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequiredLength = 6;
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddDefaultTokenProviders();
 
         // Redis
         var redisConfig = $"{config["REDIS_HOST"] ?? "redis-16383.crce276.ap-south-1-3.ec2.cloud.redislabs.com"}:{config["REDIS_PORT"] ?? "16383"},password={config["REDIS_PASSWORD"] ?? "O2B34kkiyIX6hF7aBhkzLSq0um1Ygui7"}";

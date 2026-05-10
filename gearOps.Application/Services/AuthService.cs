@@ -1,6 +1,7 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
-using BCrypt.Net;
+using Microsoft.AspNetCore.Identity;
 using gearOps.Application.DTOs;
 using gearOps.Application.Interfaces;
 using gearOps.Domain.Entities;
@@ -14,13 +15,15 @@ public class AuthService : IAuthService
     private readonly IOtpService _otpService;
     private readonly IEmailService _emailService;
     private readonly ITokenService _tokenService;
+    private readonly UserManager<User> _userManager;
 
-    public AuthService(IUserRepository userRepository, IOtpService otpService, IEmailService emailService, ITokenService tokenService)
+    public AuthService(IUserRepository userRepository, IOtpService otpService, IEmailService emailService, ITokenService tokenService, UserManager<User> userManager)
     {
         _userRepository = userRepository;
         _otpService = otpService;
         _emailService = emailService;
         _tokenService = tokenService;
+        _userManager = userManager;
     }
 
     public async Task<string> RequestRegistrationOtpAsync(RequestOtpDto dto)
@@ -55,19 +58,23 @@ public class AuthService : IAuthService
             throw new BadRequestException("OTP verification not complete or expired.");
         }
 
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-
         var user = new User
         {
             FullName = dto.FullName,
             Email = email,
-            Phone = dto.Phone,
+            UserName = email,
+            PhoneNumber = dto.Phone,
             Address = dto.Address,
-            PasswordHash = passwordHash,
             ProfileImageUrl = dto.ProfileImageUrl
         };
 
-        var createdUser = await _userRepository.AddUserAsync(user);
+        var result = await _userManager.CreateAsync(user, dto.Password);
+        if (!result.Succeeded)
+        {
+            throw new BadRequestException("Registration failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+
+        var createdUser = await _userManager.FindByEmailAsync(email);
         await _otpService.ClearOtpAsync(dto.VerificationId);
 
         var accessToken = _tokenService.GenerateAccessToken(createdUser);
@@ -84,16 +91,17 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
     {
-        var user = await _userRepository.GetUserByEmailAsync(dto.Email);
-        if (user == null || string.IsNullOrEmpty(user.PasswordHash))
+        var user = await _userManager.FindByEmailAsync(dto.Email);
+        if (user == null || !await _userManager.HasPasswordAsync(user))
         {
-            if (user != null && string.IsNullOrEmpty(user.PasswordHash))
+            if (user != null && !await _userManager.HasPasswordAsync(user))
                 throw new BadRequestException("Please login via Social Provider.");
                 
             throw new UnauthorizedException("Invalid credentials.");
         }
 
-        if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        var isPasswordValid = await _userManager.CheckPasswordAsync(user, dto.Password);
+        if (!isPasswordValid)
         {
             throw new UnauthorizedException("Invalid credentials.");
         }
@@ -112,13 +120,13 @@ public class AuthService : IAuthService
 
     public async Task<string> RequestPasswordResetOtpAsync(RequestPasswordResetDto dto)
     {
-        var user = await _userRepository.GetUserByEmailAsync(dto.Email);
+        var user = await _userManager.FindByEmailAsync(dto.Email);
         if (user == null)
         {
             throw new NotFoundException("User not found.");
         }
 
-        if (string.IsNullOrEmpty(user.PasswordHash))
+        if (!await _userManager.HasPasswordAsync(user))
         {
             throw new BadRequestException("Password reset is not available for Social Provider accounts.");
         }
@@ -147,19 +155,25 @@ public class AuthService : IAuthService
             throw new BadRequestException("OTP verification not complete or expired.");
         }
 
-        var user = await _userRepository.GetUserByEmailAsync(email);
+        var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
         {
             throw new NotFoundException("User not found.");
         }
 
-        if (string.IsNullOrEmpty(user.PasswordHash))
+        if (!await _userManager.HasPasswordAsync(user))
         {
             throw new BadRequestException("Password reset is not available for Social Provider accounts.");
         }
 
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
-        await _userRepository.UpdateUserAsync(user);
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+        
+        if (!result.Succeeded)
+        {
+            throw new BadRequestException("Password reset failed: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+
         await _otpService.ClearOtpAsync(dto.VerificationId);
 
         return true;

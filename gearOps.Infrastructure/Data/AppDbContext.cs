@@ -1,13 +1,15 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using gearOps.Domain.Entities;
 
 namespace gearOps.Infrastructure.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public DbSet<User> Users { get; set; } = null!;
+    // Users is already defined in IdentityDbContext, but we can leave it or remove it. Actually it's defined as Users so we can remove DbSet<User> or keep it. It's better to remove it.
     public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
     public DbSet<Vendor> Vendors { get; set; } = null!;
     public DbSet<Part> Parts { get; set; } = null!;
@@ -28,12 +30,19 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         
+        // Identity configurations
+        modelBuilder.Entity<User>().ToTable("Users");
+        modelBuilder.Entity<IdentityRole<int>>().ToTable("Roles");
+        modelBuilder.Entity<IdentityUserRole<int>>().ToTable("UserRoles");
+        modelBuilder.Entity<IdentityUserClaim<int>>().ToTable("UserClaims");
+        modelBuilder.Entity<IdentityUserLogin<int>>().ToTable("UserLogins");
+        modelBuilder.Entity<IdentityRoleClaim<int>>().ToTable("RoleClaims");
+        modelBuilder.Entity<IdentityUserToken<int>>().ToTable("UserTokens");
+
+        // Note: IdentityUser already has unique indexes for NormalizedEmail and NormalizedUserName. 
+        // We can remove the custom indexes for Email. 
         modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
-            
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Phone)
+            .HasIndex(u => u.PhoneNumber)
             .IsUnique();
 
         // Primary Key configurations for non-standard ID names based on your DDL logic

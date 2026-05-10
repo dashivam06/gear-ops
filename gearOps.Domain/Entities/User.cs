@@ -1,17 +1,14 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
 using gearOps.Domain.Enums;
 
 namespace gearOps.Domain.Entities;
 
-public class User
+public class User : IdentityUser<int>
 {
-    public int UserId { get; set; }
     public string FullName { get; set; } = null!;
-    public string Email { get; set; } = null!;
-    public string Phone { get; set; } = null!;
     public string? Address { get; set; }
-    public string PasswordHash { get; set; } = null!;
     public Role Role { get; set; } = Role.Customer;
     public decimal CreditsRemaining { get; set; } = 0.00m;
     public string? ProfileImageUrl { get; set; }
