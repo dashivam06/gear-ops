@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+**/.git
+**/.vs
+**/.vscode
+**/.idea
+**/node_modules/
+**/*.user
+**/*.suo
+**/Thumbs.db
+**/.DS_Store
+**/launchSettings.json
+.env
+*.md
+!README.md
